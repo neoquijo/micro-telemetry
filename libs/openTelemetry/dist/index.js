@@ -15,4 +15,5 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./src/logger"), exports);
+__exportStar(require("./src/loggerFactory"), exports);
 __exportStar(require("./src/openTelemetryLogger"), exports);

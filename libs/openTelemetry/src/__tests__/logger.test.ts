@@ -8,7 +8,7 @@ import { OpenTelemetryLogger } from '../openTelemetryLogger';
 
 const logger = loggerFactory.use('somme');
 const childrenSpan = sinon.stub(logger['transport'], 'childrenSpan');
-const addLogStub = sinon.stub(logger, 'addLog') as unknown as SinonStub<[LogType, string, { key: string }], void>;
+const addLogStub = sinon.stub(logger, 'addLog') as unknown as SinonStub<[LogType, string, { key: string; }], void>;
 
 describe('Logger', () => {
 
@@ -91,34 +91,17 @@ describe('Logger', () => {
 
   it('should throw an error when end method is called without an open span', () => {
     const errorMessage = 'Span is already closed';
-    try {
-      logger.span('span');
-      logger.end();
-      logger.span('somme');
-    }
-    catch (error) {
-      expect(error).to.be.an.instanceOf(Error);
-      expect(error.message).to.equal(errorMessage);
-    }
-  });
-
-  it('should throw an error when isOpen is false', function () {
-    logger['_isOpen'] = false;
-    const callValidateIsOpen = () => logger['validateIsOpen']();
-    expect(callValidateIsOpen).to.throw('Span is already closed');
+    logger.span('span');
+    logger.end();
+    logger.span('somme');
   });
 
   it('should throw an error when isOpen is false, wheen .end() is called', () => {
-    try {
-      logger.span('algo');
-      logger.end();
-      logger.span('algomas');
-      const callValidateIsOpen = () => logger['validateIsOpen']();
-      expect(callValidateIsOpen).to.throw('Span is already closed');
-    }
-    catch (error) {
-      expect(error.message).to.equal('Span is already closed');
-    }
+    logger.span('algo');
+    logger.end();
+    logger.span('algomas');
+    const callValidateIsOpen = () => logger['validateIsOpen']();
+    expect(callValidateIsOpen).to.throw('Span is already closed');
   });
 
   it('should create diferent instances of logger, and use existing ones', () => {

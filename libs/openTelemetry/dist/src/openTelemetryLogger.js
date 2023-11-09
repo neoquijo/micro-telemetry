@@ -4,7 +4,6 @@ exports.OpenTelemetryLogger = exports.startOpenTelemetrySdk = void 0;
 /* eslint-disable import/no-unresolved */
 const api_1 = require("@opentelemetry/api");
 const context_utils_1 = require("@opentelemetry/api/build/src/trace/context-utils");
-const exporter_trace_otlp_proto_1 = require("@opentelemetry/exporter-trace-otlp-proto");
 const resources_1 = require("@opentelemetry/resources/");
 const sdk_node_1 = require("@opentelemetry/sdk-node");
 const sdk_trace_node_1 = require("@opentelemetry/sdk-trace-node");
@@ -34,11 +33,12 @@ class OpenTelemetryLogger {
         const resource = new resources_1.Resource({
             [semantic_conventions_1.SemanticResourceAttributes.SERVICE_NAME]: name,
         });
-        const jaegerExporter = new exporter_trace_otlp_proto_1.OTLPTraceExporter({
-            url: process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT,
-        });
+        const exporter = new sdk_trace_node_1.ConsoleSpanExporter();
+        // const exporter = new OTLPTraceExporter({
+        //   url: process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT,
+        // });
         const provider = new sdk_trace_node_1.BasicTracerProvider({ resource: resource });
-        provider.addSpanProcessor(new sdk_trace_node_1.BatchSpanProcessor(jaegerExporter));
+        provider.addSpanProcessor(new sdk_trace_node_1.BatchSpanProcessor(exporter));
         return provider;
     }
     end(span) {

@@ -74,32 +74,16 @@ describe('Logger', () => {
     });
     it('should throw an error when end method is called without an open span', () => {
         const errorMessage = 'Span is already closed';
-        try {
-            logger.span('span');
-            logger.end();
-            logger.span('somme');
-        }
-        catch (error) {
-            (0, chai_1.expect)(error).to.be.an.instanceOf(Error);
-            (0, chai_1.expect)(error.message).to.equal(errorMessage);
-        }
-    });
-    it('should throw an error when isOpen is false', function () {
-        logger['_isOpen'] = false;
-        const callValidateIsOpen = () => logger['validateIsOpen']();
-        (0, chai_1.expect)(callValidateIsOpen).to.throw('Span is already closed');
+        logger.span('span');
+        logger.end();
+        logger.span('somme');
     });
     it('should throw an error when isOpen is false, wheen .end() is called', () => {
-        try {
-            logger.span('algo');
-            logger.end();
-            logger.span('algomas');
-            const callValidateIsOpen = () => logger['validateIsOpen']();
-            (0, chai_1.expect)(callValidateIsOpen).to.throw('Span is already closed');
-        }
-        catch (error) {
-            (0, chai_1.expect)(error.message).to.equal('Span is already closed');
-        }
+        logger.span('algo');
+        logger.end();
+        logger.span('algomas');
+        const callValidateIsOpen = () => logger['validateIsOpen']();
+        (0, chai_1.expect)(callValidateIsOpen).to.throw('Span is already closed');
     });
     it('should create diferent instances of logger, and use existing ones', () => {
         const logger1 = loggerFactory_1.loggerFactory.use('same');

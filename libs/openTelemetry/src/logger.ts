@@ -25,7 +25,7 @@ type ILogType = {
 
 export class Logger implements ILogger {
 
-  private isOpen: boolean = true;
+  private _isOpen: boolean = true;
   // eslint-disable-next-line no-use-before-define
   private readonly childrens: Logger[] = [];
   private readonly log: ILogType;
@@ -43,6 +43,10 @@ export class Logger implements ILogger {
     };
   }
 
+  public get isOpen(): boolean {
+    return this._isOpen;
+  }
+
   private validateIsOpen() {
     if (!this.isOpen)
       throw new Error('Span is already closed');
@@ -58,7 +62,7 @@ export class Logger implements ILogger {
   public end(): void {
     this.childrens.forEach((children) => children.end());
     this._span?.end();
-    this.isOpen = false;
+    this._isOpen = false;
   }
 
   public addLog(logLevel: LogType, message: string, data: Record<string, AttributeValue>): void {

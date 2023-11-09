@@ -4,7 +4,7 @@ import { setSpan } from '@opentelemetry/api/build/src/trace/context-utils';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { Resource } from '@opentelemetry/resources/';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { BasicTracerProvider, BatchSpanProcessor } from '@opentelemetry/sdk-trace-node';
+import { BasicTracerProvider, BatchSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
 type Event = {
@@ -53,11 +53,12 @@ export class OpenTelemetryLogger {
       [SemanticResourceAttributes.SERVICE_NAME]: name,
     });
 
-    const jaegerExporter = new OTLPTraceExporter({
-      url: process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT,
-    });
+    const exporter = new ConsoleSpanExporter();
+    // const exporter = new OTLPTraceExporter({
+    //   url: process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT,
+    // });
     const provider = new BasicTracerProvider({ resource: resource });
-    provider.addSpanProcessor(new BatchSpanProcessor(jaegerExporter));
+    provider.addSpanProcessor(new BatchSpanProcessor(exporter));
 
     return provider;
   }
@@ -90,5 +91,4 @@ export class OpenTelemetryLogger {
       event?.startTime,
     ));
   }
-
 }
