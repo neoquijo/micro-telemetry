@@ -1,33 +1,32 @@
-// import { loggerFactory } from "logs";
-import { InMemoryBroker, Microservice } from 'nats-micro';
+import { Microservice } from 'nats-micro';
+import { loggerFactory } from 'logs';
+
 import { MS1 } from './ms1';
 import { MS2 } from './ms2';
 import { broker } from './broker';
 
 (async () => {
+  const log = loggerFactory.use('service');
+  const log2 = loggerFactory.use('service2');
+
+  log.span('algo');
+  const { span, ctx } = log.createContext('spanWithContext');
+  const algo = log2.injectContext('somme', ctx);
+  const nested = algo.span('noseque');
+  const deeper = nested.span('dobleNest');
+  deeper.info('deeper inside');
+  algo.info('algo sub');
+
   try {
-    // const logger = loggerFactory.use('main')
 
     const ms1 = new MS1();
     await Microservice.createFromClass(broker, ms1);
     const ms2 = new MS2();
     await Microservice.createFromClass(broker, ms2);
 
-    // logger.span('Main app');
-    // logger.info('Куку')
-
-    await broker.send({ microservice: 'ms1', method: 'algo' }, 'hello');
-
-    await new Promise<void>((res) => {
-      const int = setInterval(() => {
-        if (ms1.finished) {
-          clearInterval(int);
-          res();
-        }
-      }
-        ,
-        100);
-    });
+    await broker.send({ microservice: 'ms1', method: 'algo', }, 'hello', { headers: [['X-LOG-SPAN-ID', JSON.stringify(ctx)]] });
+    algo.end();
+    span.end();
 
     console.log('ok');
   } catch (error) {

@@ -3,7 +3,7 @@ import {
   z,
 } from 'nats-micro';
 import { broker } from './broker';
-import { loggerFactory } from 'logs';
+import { extractLogContextFromHeaders, loggerFactory } from 'logs';
 
 export const log = loggerFactory.use('ms2');
 
@@ -26,9 +26,9 @@ export class MS2 {
     response: z.void(),
   })
   algo(req: Request<string>, res: Response<void>) {
-
-    console.log(`MS2.algo(${req.data})`);
-
-    // res.send('algo');
+    const logger = loggerFactory.use(req.handler.microservice)
+    const noseque = log.injectContext('algo', extractLogContextFromHeaders(req.headers))
+    noseque.info('noseque from ms2')
+    noseque.end()
   }
 }

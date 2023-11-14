@@ -9,9 +9,18 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "resolveJsonModule": true,
-    "lib": [ "es2019" ],
+    "lib": [
+      "es2019"
+    ],
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "js_process/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "src/**/*.ts",
+    "js_process/**/*.ts,",
+    "libs/nats-micro",
+    "libs/openTelemetry"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

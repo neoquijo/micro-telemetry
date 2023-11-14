@@ -1,23 +1,13 @@
 /* eslint-disable import/no-unresolved */
-import { Attributes, Span, TimeInput, Tracer, context } from '@opentelemetry/api';
+import { Span, Tracer, context, propagation, trace, } from '@opentelemetry/api';
 import { setSpan } from '@opentelemetry/api/build/src/trace/context-utils';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { Resource } from '@opentelemetry/resources/';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { BasicTracerProvider, BatchSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
+import { BasicTracerProvider, BatchSpanProcessor, SimpleSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { Ctx, ISpanOptions, Event } from './types';
 
-type Event = {
-  name: string,
-  attributes?: Attributes,
-  startTime?: TimeInput,
-};
-
-interface ISpanOptions {
-  events: Event[]
-  name: string,
-  attributes?: Attributes;
-}
 
 let sdk: NodeSDK;
 
@@ -53,12 +43,13 @@ export class OpenTelemetryLogger {
       [SemanticResourceAttributes.SERVICE_NAME]: name,
     });
 
-    const exporter = new ConsoleSpanExporter();
-    // const exporter = new OTLPTraceExporter({
-    //   url: process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT,
-    // });
+    const exporterConsole = new ConsoleSpanExporter();
+    const exporter = new OTLPTraceExporter({
+      url: 'http://localhost:4318/v1/traces',
+    });
     const provider = new BasicTracerProvider({ resource: resource });
-    provider.addSpanProcessor(new BatchSpanProcessor(exporter));
+    provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
+    provider.addSpanProcessor(new SimpleSpanProcessor(exporterConsole))
 
     return provider;
   }
@@ -71,6 +62,20 @@ export class OpenTelemetryLogger {
     const parentSpan = this.tracer!.startSpan(name, options);
     this.populateSpan(parentSpan, options);
     return parentSpan;
+  }
+
+  createContext(span: Span): Ctx {
+    const contextWithSpan = trace.setSpan(context.active(), span);
+    const ctx = {}
+    context.with(contextWithSpan, () => {
+      propagation.inject(context.active(), ctx)
+    });
+    return ctx as Ctx
+  }
+
+  createSpanWithContext(ctx: Ctx): Span | undefined {
+    const contextActive = propagation.extract(context.active(), ctx)
+    return trace.getSpan(contextActive)
   }
 
   childrenSpan(name: string, father?: Span, options?: ISpanOptions): Span {

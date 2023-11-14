@@ -3,18 +3,20 @@ import Log from 'debug-level';
 import { isUndefined } from 'util';
 
 import { OpenTelemetryLogger } from './openTelemetryLogger';
+import { Ctx, SpanOptions } from './types';
 
 export type { AttributeValue } from '@opentelemetry/api';
 
 export type ILogger = {
-  span(text: string, data?: Record<string, AttributeValue>): ILogger;
+  span(text: string, data?: SpanOptions): ILogger;
   end(): void;
-  warn(message: string, data?: Record<string, AttributeValue>): void;
-  silly(message: string, data?: Record<string, AttributeValue>): void;
-  debug(message: string, data?: Record<string, AttributeValue>): void;
-  error(message: string, error?: unknown, data?: Record<string, AttributeValue>): void;
-  info(message: string, data?: Record<string, AttributeValue>): void;
-  verbose(message: string, data?: Record<string, AttributeValue>): void;
+  warn(message: string, data?: SpanOptions): void;
+  silly(message: string, data?: SpanOptions): void;
+  debug(message: string, data?: SpanOptions): void;
+  error(message: string, error?: unknown, data?: SpanOptions): void;
+  info(message: string, data?: SpanOptions): void;
+  verbose(message: string, data?: SpanOptions): void;
+  createContext(name: string, options?: SpanOptions): { span: ILogger, ctx: Ctx }
 };
 
 export type LogType = 'info' | 'warn' | 'silly' | 'debug' | 'error' | 'verbose';
@@ -57,6 +59,18 @@ export class Logger implements ILogger {
     const span = new Logger(this.transport, this.transport.childrenSpan(text, this._span));
     this.childrens.push(span);
     return span;
+  }
+
+  public createContext(name: string, options?: SpanOptions): { span: ILogger, ctx: Ctx } {
+    const span = new Logger(this.transport, this.transport.childrenSpan(name, this.transport.span(name)));
+    const ctx = this.transport.createContext(span._span!);
+    return { span, ctx };
+  }
+
+  public injectContext(name: string, ctx: Ctx) {
+    this.validateIsOpen();
+    const span = this.transport.createSpanWithContext(ctx);
+    return new Logger(this.transport, this.transport.childrenSpan(name, this.transport.childrenSpan(name, span)));
   }
 
   public end(): void {
@@ -109,4 +123,13 @@ export class Logger implements ILogger {
   public verbose(message: string, data: Record<string, AttributeValue> = {}): void {
     this.addLog('verbose', message, data);
   }
+}
+
+export function extractLogContextFromHeaders(headers: Iterable<[string, string]>): Ctx | undefined {
+  for (const [headerKey, headerValue] of headers) {
+    if (headerKey.toLowerCase() === 'X-LOG-SPAN-ID'.toLowerCase()) {
+      return JSON.parse(headerValue);
+    }
+  }
+  return undefined;
 }

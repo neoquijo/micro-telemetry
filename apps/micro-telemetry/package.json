@@ -10,8 +10,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@opentelemetry/context-async-hooks": "^1.18.1",
+    "@opentelemetry/propagator-b3": "^1.18.1",
     "logs": "file://../../libs/openTelemetry",
-    "nats-micro": "file:///home/anton/Projects/microservices/nats-micro"
+    "nats-micro": "file://../../libs/nats-micro"
   },
   "devDependencies": {
     "ts-node": "^10.9.1",
