@@ -1,5 +1,5 @@
 /* eslint-disable import/no-unresolved */
-import { Span, Tracer, context, propagation, trace, } from '@opentelemetry/api';
+import { Span, SpanContext, Tracer, context, propagation, trace, } from '@opentelemetry/api';
 import { setSpan } from '@opentelemetry/api/build/src/trace/context-utils';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { Resource } from '@opentelemetry/resources/';
@@ -78,11 +78,10 @@ export class OpenTelemetryLogger {
     return trace.getSpan(contextActive)
   }
 
-  childrenSpan(name: string, father?: Span, options?: ISpanOptions): Span {
-    if (!father)
-      return this.span(name, options);
-    const ctx = setSpan(context.active(), father);
-    const childSpan = this.tracer!.startSpan(name, options, ctx);
+  childrenSpan(name: string, father: Span, fromSpan?: SpanContext, options?: ISpanOptions): Span {
+    const activeContext = context.active();
+    const span = fromSpan && trace.getSpan(trace.setSpanContext(activeContext, fromSpan));
+    const childSpan = this.tracer!.startSpan(name, options, setSpan(activeContext, span || father));
     this.populateSpan(childSpan, options);
     return childSpan;
   }

@@ -10,7 +10,7 @@ class LoggerFactory {
     }
 
     const openTelemetryLogger = new OpenTelemetryLogger().init(name);
-    const logger = new Logger(openTelemetryLogger);
+    const logger = new Logger(openTelemetryLogger, openTelemetryLogger.span(name));
     this.loggerMap.set(name, logger);
 
     return logger;

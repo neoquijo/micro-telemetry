@@ -1,4 +1,4 @@
-import { AttributeValue, Span } from '@opentelemetry/api';
+import { AttributeValue, Span, SpanContext } from '@opentelemetry/api';
 import Log from 'debug-level';
 import { isUndefined } from 'util';
 
@@ -8,7 +8,7 @@ import { Ctx, SpanOptions } from './types';
 export type { AttributeValue } from '@opentelemetry/api';
 
 export type ILogger = {
-  span(text: string, data?: SpanOptions): ILogger;
+  span(text: string, father?: SpanContext, data?: SpanOptions): ILogger;
   end(): void;
   warn(message: string, data?: SpanOptions): void;
   silly(message: string, data?: SpanOptions): void;
@@ -16,7 +16,7 @@ export type ILogger = {
   error(message: string, error?: unknown, data?: SpanOptions): void;
   info(message: string, data?: SpanOptions): void;
   verbose(message: string, data?: SpanOptions): void;
-  createContext(name: string, options?: SpanOptions): { span: ILogger, ctx: Ctx }
+  get id(): any
 };
 
 export type LogType = 'info' | 'warn' | 'silly' | 'debug' | 'error' | 'verbose';
@@ -33,7 +33,7 @@ export class Logger implements ILogger {
   private readonly log: ILogType;
   constructor(
     private readonly transport: OpenTelemetryLogger,
-    private readonly _span?: Span | undefined,
+    private readonly _span: Span
   ) {
     this.log = {
       error: new Log(`${this.transport.name}:error`, { level: 'ERROR' }).error,
@@ -45,6 +45,10 @@ export class Logger implements ILogger {
     };
   }
 
+  public get id() {
+    return this._span.spanContext()
+  }
+
   public get isOpen(): boolean {
     return this._isOpen;
   }
@@ -54,23 +58,11 @@ export class Logger implements ILogger {
       throw new Error('Span is already closed');
   }
 
-  public span(text: string): ILogger {
+  public span(text: string, father?: SpanContext): ILogger {
     this.validateIsOpen();
-    const span = new Logger(this.transport, this.transport.childrenSpan(text, this._span));
+    const span = new Logger(this.transport, this.transport.childrenSpan(text, this._span, father));
     this.childrens.push(span);
     return span;
-  }
-
-  public createContext(name: string, options?: SpanOptions): { span: ILogger, ctx: Ctx } {
-    const span = new Logger(this.transport, this.transport.childrenSpan(name, this.transport.span(name)));
-    const ctx = this.transport.createContext(span._span!);
-    return { span, ctx };
-  }
-
-  public injectContext(name: string, ctx: Ctx) {
-    this.validateIsOpen();
-    const span = this.transport.createSpanWithContext(ctx);
-    return new Logger(this.transport, this.transport.childrenSpan(name, this.transport.childrenSpan(name, span)));
   }
 
   public end(): void {
