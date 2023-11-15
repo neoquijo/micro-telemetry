@@ -12,6 +12,7 @@
   "dependencies": {
     "@opentelemetry/context-async-hooks": "^1.18.1",
     "@opentelemetry/propagator-b3": "^1.18.1",
+    "debug-level": "^3.1.2",
     "logs": "file://../../libs/openTelemetry",
     "nats-micro": "file://../../libs/nats-micro"
   },

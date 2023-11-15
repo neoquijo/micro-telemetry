@@ -23,12 +23,13 @@ export class MS1 {
     response: z.string(),
   })
   async algo(req: Request<string>, res: Response<string>) {
-    const noseque = log.injectContext('algo', extractLogContextFromHeaders(req.headers));
-    const deepMs = noseque.span('deeper on ms1');
-    deepMs.info('algo');
-    noseque.end();
-    await broker.send({ microservice: 'ms2', method: 'algo' }, 'hello1 from ms1', { headers: [['X-LOG-SPAN-ID', req.headers[0][1]]] });
-    await broker.send({ microservice: 'ms2', method: 'algo' }, 'hello2 from ms1', { headers: [['X-LOG-SPAN-ID', req.headers[0][1]]] });
+    const noseque = log.span('algo', extractLogContextFromHeaders(req.headers));
+    noseque.info('1')
+    await broker.send({ microservice: 'ms2', method: 'algo' }, 'hello1 from ms1', { headers: [['X-LOG-SPAN-ID', JSON.stringify(noseque.id)]] });
+    noseque.info('2')
+    await broker.send({ microservice: 'ms2', method: 'algo' }, 'hello2 from ms1', { headers: [['X-LOG-SPAN-ID', JSON.stringify(noseque.id)]] });
+    noseque.info('3')
+    log.end()
     res.send('algo');
     this.finished = true;
   };

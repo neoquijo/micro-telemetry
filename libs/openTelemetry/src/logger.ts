@@ -117,7 +117,7 @@ export class Logger implements ILogger {
   }
 }
 
-export function extractLogContextFromHeaders(headers: Iterable<[string, string]>): Ctx | undefined {
+export function extractLogContextFromHeaders(headers: Iterable<[string, string]>): SpanContext | undefined {
   for (const [headerKey, headerValue] of headers) {
     if (headerKey.toLowerCase() === 'X-LOG-SPAN-ID'.toLowerCase()) {
       return JSON.parse(headerValue);

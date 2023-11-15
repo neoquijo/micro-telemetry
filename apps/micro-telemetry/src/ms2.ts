@@ -27,8 +27,7 @@ export class MS2 {
   })
   algo(req: Request<string>, res: Response<void>) {
     const logger = loggerFactory.use(req.handler.microservice)
-    const noseque = log.injectContext('algo', extractLogContextFromHeaders(req.headers))
-    noseque.info('noseque from ms2')
+    const noseque = log.span('algo', extractLogContextFromHeaders(req.headers))
     noseque.end()
   }
 }
