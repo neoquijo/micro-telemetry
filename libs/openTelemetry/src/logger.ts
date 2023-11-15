@@ -16,7 +16,9 @@ export type ILogger = {
   error(message: string, error?: unknown, data?: SpanOptions): void;
   info(message: string, data?: SpanOptions): void;
   verbose(message: string, data?: SpanOptions): void;
-  createContext(name: string, options?: SpanOptions): { span: ILogger, ctx: Ctx }
+  createContext(name: string, options?: SpanOptions): { span: ILogger, ctx: Ctx; };
+
+  get id(): string | undefined;
 };
 
 export type LogType = 'info' | 'warn' | 'silly' | 'debug' | 'error' | 'verbose';
@@ -32,7 +34,7 @@ export class Logger implements ILogger {
   private readonly childrens: Logger[] = [];
   private readonly log: ILogType;
   constructor(
-    private readonly transport: OpenTelemetryLogger,
+    public readonly transport: OpenTelemetryLogger,
     private readonly _span?: Span | undefined,
   ) {
     this.log = {
@@ -49,6 +51,10 @@ export class Logger implements ILogger {
     return this._isOpen;
   }
 
+  public get id(): string | undefined {
+    return this._span ? this.transport.getSpanId(this._span) : undefined;
+  }
+
   private validateIsOpen() {
     if (!this.isOpen)
       throw new Error('Span is already closed');
@@ -61,7 +67,7 @@ export class Logger implements ILogger {
     return span;
   }
 
-  public createContext(name: string, options?: SpanOptions): { span: ILogger, ctx: Ctx } {
+  public createContext(name: string, options?: SpanOptions): { span: ILogger, ctx: Ctx; } {
     const span = new Logger(this.transport, this.transport.childrenSpan(name, this.transport.span(name)));
     const ctx = this.transport.createContext(span._span!);
     return { span, ctx };

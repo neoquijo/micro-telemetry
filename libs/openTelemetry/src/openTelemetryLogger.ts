@@ -1,12 +1,13 @@
 /* eslint-disable import/no-unresolved */
 import { Span, Tracer, context, propagation, trace, } from '@opentelemetry/api';
-import { setSpan } from '@opentelemetry/api/build/src/trace/context-utils';
+import { setSpan, setSpanContext } from '@opentelemetry/api/build/src/trace/context-utils';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { Resource } from '@opentelemetry/resources/';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { BasicTracerProvider, BatchSpanProcessor, SimpleSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { Ctx, ISpanOptions, Event } from './types';
+import { isUndefined } from 'util';
 
 
 let sdk: NodeSDK;
@@ -17,7 +18,6 @@ export function startOpenTelemetrySdk() {
 }
 
 export class OpenTelemetryLogger {
-
   private tracer: Tracer | undefined;
   private _span: Span | undefined;
   public name: string | undefined;
@@ -45,7 +45,7 @@ export class OpenTelemetryLogger {
 
     const exporterConsole = new ConsoleSpanExporter();
     const exporter = new OTLPTraceExporter({
-      url: 'http://localhost:4318/v1/traces',
+      url: process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT,
     });
     const provider = new BasicTracerProvider({ resource: resource });
     provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
@@ -58,6 +58,11 @@ export class OpenTelemetryLogger {
     span.end();
   }
 
+  getSpanId(span: Span): string | undefined {
+    const context = span.spanContext();
+    return `00-${context.traceId}-${context.spanId}-${context.traceFlags.toString(16)}`;
+  }
+
   span(name: string, options?: ISpanOptions): Span {
     const parentSpan = this.tracer!.startSpan(name, options);
     this.populateSpan(parentSpan, options);
@@ -66,16 +71,16 @@ export class OpenTelemetryLogger {
 
   createContext(span: Span): Ctx {
     const contextWithSpan = trace.setSpan(context.active(), span);
-    const ctx = {}
+    const ctx = {};
     context.with(contextWithSpan, () => {
-      propagation.inject(context.active(), ctx)
+      propagation.inject(context.active(), ctx);
     });
-    return ctx as Ctx
+    return ctx as Ctx;
   }
 
   createSpanWithContext(ctx: Ctx): Span | undefined {
-    const contextActive = propagation.extract(context.active(), ctx)
-    return trace.getSpan(contextActive)
+    const contextActive = propagation.extract(context.active(), ctx);
+    return trace.getSpan(contextActive);
   }
 
   childrenSpan(name: string, father?: Span, options?: ISpanOptions): Span {
@@ -83,6 +88,26 @@ export class OpenTelemetryLogger {
       return this.span(name, options);
     const ctx = setSpan(context.active(), father);
     const childSpan = this.tracer!.startSpan(name, options, ctx);
+    this.populateSpan(childSpan, options);
+    return childSpan;
+  }
+
+  childrenSpanInId(name: string, parentId: string | undefined, options?: ISpanOptions): Span {
+    if (isUndefined(parentId))
+      return this.span(name, options);
+
+    const [version, traceId, spanId, traceFlags] = parentId.split('-', 4);
+
+    const ctx = setSpanContext(
+      context.active(),
+      {
+        traceId,
+        traceFlags: parseInt(traceFlags, 16),
+        spanId,
+      }
+    );
+    const childSpan = this.tracer!.startSpan(name, options, ctx);
+
     this.populateSpan(childSpan, options);
     return childSpan;
   }
