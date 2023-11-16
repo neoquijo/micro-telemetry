@@ -49,7 +49,7 @@ export class OpenTelemetryLogger {
     });
     const provider = new BasicTracerProvider({ resource: resource });
     provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
-    provider.addSpanProcessor(new SimpleSpanProcessor(exporterConsole))
+    // provider.addSpanProcessor(new SimpleSpanProcessor(exporterConsole))
 
     return provider;
   }
