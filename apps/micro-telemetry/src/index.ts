@@ -5,15 +5,19 @@ import { MS1 } from './ms1';
 import { MS2 } from './ms2';
 import { broker } from './broker';
 import { MS0 } from './ms0';
+import { MS3 } from './ms3';
 
 (async () => {
 
+  const ms0 = new MS0();
+  await Microservice.createFromClass(broker, ms0)
   const ms1 = new MS1();
   await Microservice.createFromClass(broker, ms1);
   const ms2 = new MS2();
   await Microservice.createFromClass(broker, ms2);
-  const ms0 = new MS0();
-  await Microservice.createFromClass(broker, ms0)
+  const ms3 = new MS3();
+  await Microservice.createFromClass(broker, ms3)
+
 
 
 

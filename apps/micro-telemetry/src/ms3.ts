@@ -13,11 +13,11 @@ const IRequest = z.object({
 type Req = z.infer<typeof IRequest>
 
 @microservice({
-  name: 'ms0',
+  name: 'ms3',
   version: '0.0.1',
   description: 'Distributed logging test',
 })
-export class MS0 {
+export class MS3 {
   // public microservice: Microservice | undefined;
 
   @method({
@@ -26,6 +26,7 @@ export class MS0 {
   })
   async algo(req: Request<string>, res: Response<void>) {
     const log = loggerFactory.use(req.handler.microservice);
+    const noseque = log.span('ms3', extractLogContextFromHeaders(req.headers))
     await broker.send({
       microservice: 'ms1',
       method: 'algo'
@@ -33,19 +34,8 @@ export class MS0 {
       ' {},,',
       {
         headers:
-          [['X-LOG-SPAN-ID', JSON.stringify(log.id)]],
+          [['X-LOG-SPAN-ID', JSON.stringify(noseque.id)]],
       })
-
-    broker.send({
-      microservice: 'ms3',
-      method: 'algo'
-    },
-      ' {},,',
-      {
-        headers:
-          [['X-LOG-SPAN-ID', JSON.stringify(log.id)]],
-      })
-
-    log.end();
+    noseque.end();
   }
 }

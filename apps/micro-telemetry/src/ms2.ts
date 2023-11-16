@@ -26,6 +26,7 @@ export class MS2 {
     response: z.void(),
   })
   algo(req: Request<string>, res: Response<void>) {
+    console.log(req.headers)
     const logger = loggerFactory.use(req.handler.microservice)
     const noseque = logger.span('algo', extractLogContextFromHeaders(req.headers))
     noseque.end()

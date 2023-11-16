@@ -32,9 +32,21 @@ export class MS1 {
       'hello1 from ms1',
       {
         headers:
-          [['X-LOG-SPAN-ID', req.headers[0][1]]]
+          [['X-LOG-SPAN-ID', JSON.stringify(noseque.id)]]
       });
-    log.span('ms1', extractLogContextFromHeaders(req.headers)).end()
+
+    await broker.send({
+      microservice: 'ms2',
+      method: 'algo'
+    },
+      'hello1 from ms1',
+      {
+        headers:
+          req.headers
+      });
+
+
+    log.end()
     noseque.end()
 
     this.finished = true;
