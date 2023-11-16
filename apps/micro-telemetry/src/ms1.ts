@@ -7,7 +7,7 @@ import { extractLogContextFromHeaders, loggerFactory } from 'logs';
 
 import { broker } from './broker';
 
-const log = loggerFactory.use('ms1');
+
 
 @microservice({
   name: 'ms1',
@@ -23,14 +23,20 @@ export class MS1 {
     response: z.string(),
   })
   async algo(req: Request<string>, res: Response<string>) {
-    const noseque = log.span('algo', extractLogContextFromHeaders(req.headers));
-    noseque.info('1')
-    await broker.send({ microservice: 'ms2', method: 'algo' }, 'hello1 from ms1', { headers: [['X-LOG-SPAN-ID', JSON.stringify(noseque.id)]] });
-    noseque.info('2')
-    await broker.send({ microservice: 'ms2', method: 'algo' }, 'hello2 from ms1', { headers: [['X-LOG-SPAN-ID', JSON.stringify(noseque.id)]] });
-    noseque.info('3')
-    log.end()
-    res.send('algo');
+    const log = loggerFactory.use('ms1');
+    const noseque = log.span('ms1', extractLogContextFromHeaders(req.headers));
+    await broker.send({
+      microservice: 'ms2',
+      method: 'algo'
+    },
+      'hello1 from ms1',
+      {
+        headers:
+          [['X-LOG-SPAN-ID', req.headers[0][1]]]
+      });
+    log.span('ms1', extractLogContextFromHeaders(req.headers)).end()
+    noseque.end()
+
     this.finished = true;
   };
 };

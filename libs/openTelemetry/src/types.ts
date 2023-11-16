@@ -1,7 +1,7 @@
-import { AttributeValue, Attributes, TimeInput } from '@opentelemetry/api';
+import { AttributeValue, Attributes, TimeInput, SpanContext } from '@opentelemetry/api';
 import { Span } from '@opentelemetry/sdk-trace-node';
 
-export type { AttributeValue } from '@opentelemetry/api';
+export type { AttributeValue, SpanContext } from '@opentelemetry/api';
 
 export type Event = {
   name: string,

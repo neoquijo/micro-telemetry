@@ -4,19 +4,21 @@ import { loggerFactory } from 'logs';
 import { MS1 } from './ms1';
 import { MS2 } from './ms2';
 import { broker } from './broker';
+import { MS0 } from './ms0';
 
 (async () => {
-  const log = loggerFactory.use('trace');
-
 
   const ms1 = new MS1();
   await Microservice.createFromClass(broker, ms1);
   const ms2 = new MS2();
   await Microservice.createFromClass(broker, ms2);
+  const ms0 = new MS0();
+  await Microservice.createFromClass(broker, ms0)
 
-  await broker.send({ microservice: 'ms1', method: 'algo', }, 'hello', { headers: [['X-LOG-SPAN-ID', JSON.stringify(log.id)]] });
 
-  log.end()
+
+  await broker.send({ microservice: 'ms0', method: 'algo', }, 'hello');
+
 
 })();
 

@@ -64,20 +64,6 @@ export class OpenTelemetryLogger {
     return parentSpan;
   }
 
-  createContext(span: Span): Ctx {
-    const contextWithSpan = trace.setSpan(context.active(), span);
-    const ctx = {}
-    context.with(contextWithSpan, () => {
-      propagation.inject(context.active(), ctx)
-    });
-    return ctx as Ctx
-  }
-
-  createSpanWithContext(ctx: Ctx): Span | undefined {
-    const contextActive = propagation.extract(context.active(), ctx)
-    return trace.getSpan(contextActive)
-  }
-
   childrenSpan(name: string, father: Span, fromSpan?: SpanContext, options?: ISpanOptions): Span {
     const activeContext = context.active();
     const span = fromSpan && trace.getSpan(trace.setSpanContext(activeContext, fromSpan));
