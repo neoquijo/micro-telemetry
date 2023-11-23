@@ -29,6 +29,7 @@ export class MS3 {
   async algo(req: Request<string>, res: Response<void>) {
     const log = loggerFactory.use(req.handler.microservice);
     const noseque = log.span('ms3', extractLogContextFromHeaders(req.headers))
+    console.log('ms3')
     await broker.send({
       microservice: 'ms1',
       method: 'algo'

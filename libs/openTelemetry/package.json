@@ -13,7 +13,7 @@
     "debug-level": "^3.1.2"
   },
   "scripts": {
-    "test": "sh -ac '. ./.env; NODE_ENV=test nyc ts-mocha \"src/__tests__/*.test.ts\"'",
+    "test": "sh -ac '. ./.env; NODE_ENV=test nyc ts-mocha --require @opentelemetry/contrib-test-utils \"src/__tests__/*.test.ts\"'",
     "build": "npx tsc"
   },
   "repository": {
@@ -23,6 +23,7 @@
   "author": "Optimacros",
   "license": "ISC",
   "devDependencies": {
+    "@opentelemetry/contrib-test-utils": "^0.34.3",
     "@types/chai": "^4.3.9",
     "@types/debug": "^4.1.10",
     "@types/mocha": "^10.0.3",

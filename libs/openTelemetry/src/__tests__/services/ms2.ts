@@ -2,9 +2,8 @@ import {
   microservice, method, Request, Response,
   z,
 } from 'nats-micro';
-import { extractLogContextFromHeaders } from '../../logger';
-import { loggerFactory } from '../../loggerFactory';
 
+import { loggerFactory } from '../../loggerFactory';
 
 export const log = loggerFactory.use('ms2');
 
@@ -24,12 +23,23 @@ export class MS2 {
 
   @method({
     request: z.string(),
-    response: z.void(),
+    response: z.string(),
   })
-  algo(req: Request<string>, res: Response<void>) {
+  algo(req: Request<string>, res: Response<string>) {
     console.log('ms2')
-    const logger = loggerFactory.use(req.handler.microservice)
-    const noseque = logger.span('algo', req.headers)
-    noseque.end()
+    res.send('response from ms2')
+    // broker.send({
+    //   microservice: 'ms3',
+    //   method: 'algo'
+    // },
+    //   ' {},,',
+    //   {
+    //     headers:
+    //       [['X-LOG-SPAN-ID', JSON.stringify(log.id)]],
+    //   })
+    // const logger = loggerFactory.use(req.handler.microservice)
+    // const noseque = logger.span('algo', req.headers)
+    // noseque.end()
+    return 'response from ms2'
   }
 }

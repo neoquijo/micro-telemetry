@@ -1,15 +1,15 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
   microservice, method, Request, Response,
   z,
   Microservice,
 } from 'nats-micro';
 
-
-import { broker } from './broker';
-import { extractLogContextFromHeaders } from '../../logger';
+import { brokerInstance } from './broker';
 import { loggerFactory } from '../../loggerFactory';
-
-
+import { MockLogger, mockLogger } from '../mockLogger';
+import { MockTransport } from '../mockTransport';
+import { callStack } from '../callStack';
 
 @microservice({
   name: 'ms1',
@@ -20,37 +20,22 @@ export class MS1 {
   public microservice: Microservice | undefined;
   public finished: boolean = false;
 
+  // @ts-ignore
   @method({
     request: z.string(),
     response: z.string(),
   })
   async algo(req: Request<string>, res: Response<string>) {
-    const log = loggerFactory.use('ms1');
-    const noseque = log.span('ms1', extractLogContextFromHeaders(req.headers));
-    console.log('rere')
-    await broker.send({
-      microservice: 'ms2',
-      method: 'algo'
-    },
-      'hello1 from ms1',
-      {
-        headers:
-          [['X-LOG-SPAN-ID', JSON.stringify(noseque.id)]]
-      });
-    await broker.send({
-      microservice: 'ms2',
-      method: 'algo'
-    },
-      'hello1 from ms1',
-      {
-        headers:
-          req.headers
-      });
 
-
-    log.end()
-    noseque.end()
-
-    this.finished = true;
+    const transport = new MockTransport().init('ms1');
+    console.log('beforeFatherCreate');
+    const log = new MockLogger(transport, transport.span('fatherSpan'));
+    console.log('after fatherCreate')
+    log.span('childrenSpan');
+    const log2 = log.span('subsubspan', log.id);
+    console.log('afetr subSpan')
+    log2.info('subinfo');
+    log.end();
+    console.log('end')
   };
 };

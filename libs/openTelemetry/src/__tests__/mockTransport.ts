@@ -1,13 +1,14 @@
 /* eslint-disable import/no-unresolved */
-import { Span, SpanContext, Tracer, context, propagation, trace, } from '@opentelemetry/api';
+import { Span, SpanContext, Tracer, context, trace } from '@opentelemetry/api';
 import { setSpan } from '@opentelemetry/api/build/src/trace/context-utils';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { Resource } from '@opentelemetry/resources/';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { BasicTracerProvider, BatchSpanProcessor, SimpleSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
+import { BasicTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
-import { Ctx, ISpanOptions, Event } from './types';
-import { callStack } from './__tests__/callStack';
+
+import { ISpanOptions, Event } from '../types';
+import { callStack } from './callStack';
 
 let sdk: NodeSDK;
 
@@ -16,7 +17,7 @@ export function startOpenTelemetrySdk() {
   sdk.start();
 }
 
-export class OpenTelemetryLogger {
+export class MockTransport {
 
   private tracer: Tracer | undefined;
   private _span: Span | undefined;
@@ -30,7 +31,8 @@ export class OpenTelemetryLogger {
       startOpenTelemetrySdk();
   }
 
-  public init(name: string): OpenTelemetryLogger {
+  public init(name: string): MockTransport {
+    callStack.addCall(name, 'init');
     this.name = name;
     const provider = this.createProvider(this.name);
     this.tracer = provider.getTracer(process.title);
@@ -43,14 +45,7 @@ export class OpenTelemetryLogger {
       [SemanticResourceAttributes.SERVICE_NAME]: name,
     });
 
-    const exporterConsole = new ConsoleSpanExporter();
-    const exporter = new OTLPTraceExporter({
-      url: 'http://localhost:4318/v1/traces',
-    });
     const provider = new BasicTracerProvider({ resource: resource });
-    provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
-    // provider.addSpanProcessor(new SimpleSpanProcessor(exporterConsole))
-
     return provider;
   }
 
@@ -61,6 +56,7 @@ export class OpenTelemetryLogger {
   span(name: string, options?: ISpanOptions): Span {
     const parentSpan = this.tracer!.startSpan(name, options);
     this.populateSpan(parentSpan, options);
+    callStack.addSpan(name, parentSpan.spanContext().spanId);
     return parentSpan;
   }
 
@@ -69,6 +65,13 @@ export class OpenTelemetryLogger {
     const span = fromSpan && trace.getSpan(trace.setSpanContext(activeContext, fromSpan));
     const childSpan = this.tracer!.startSpan(name, options, setSpan(activeContext, span || father));
     this.populateSpan(childSpan, options);
+    if (fromSpan) {
+      callStack.addChildrenSpanTo(name, fromSpan?.spanId);
+    }
+    else {
+      callStack.addChildrenSpanTo(name, childSpan.spanContext().spanId);
+    }
+
     return childSpan;
   }
 
