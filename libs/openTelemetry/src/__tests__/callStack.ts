@@ -9,16 +9,14 @@ type Span = {
   context: string,
   childrens?: Span[],
   father?: string,
+  fatherId?: string,
   isOpen: boolean
 }
 
 export class CallStack {
   stack: Array<Call> = [];
+  spanList: Array<Span> = [];
   spanTree: Map<string, Span> = new Map();
-
-  clearStack() {
-    this.stack = [];
-  }
 
   addCall(service: string, method: string, args?: unknown) {
     this.stack.push({
@@ -28,86 +26,137 @@ export class CallStack {
     });
   }
 
-  addSpan(name: string, context: string, fatherContext?: string) {
-    const span: Span = {
+  addSpan(name: string, spanId: string, fatherId?: string) {
+    const span = {
       name,
-      context,
+      context: spanId,
+      fatherId,
       isOpen: true,
       childrens: [],
     };
-
-    if (fatherContext) {
-      const fatherSpan = this.spanTree.get(fatherContext);
-      if (fatherSpan) {
-        fatherSpan.childrens?.push(span);
-      }
-      else {
-        throw new Error('fatherContext not found');
-      }
-    }
-
-    this.spanTree.set(context, span);
+    this.spanList.push(span);
   }
 
-  addChildrenSpanTo(name: string, fatherContext: string) {
-    const fatherSpan = this.spanTree.get(fatherContext);
-
-    if (fatherSpan) {
-      const childSpan: Span = {
-        name,
-        context: fatherSpan.context,
-        isOpen: true,
-        childrens: [],
-      };
-
-      fatherSpan.childrens?.push(childSpan);
-    }
-    else {
-      const childSpan: Span = {
-        name,
-        context: fatherContext,
-        isOpen: true,
-        childrens: [],
-      };
-      this.spanTree.set(fatherContext, childSpan);
-    }
-  }
-
-  closeSpan(name: string) {
-    const span = this.spanTree.get(name);
-    if (span) {
-      span.childrens?.forEach((children) => {
-        this.closeSpan(children.name);
-      });
-      span.isOpen = false;
-      this.spanTree.set(name, span);
-    }
-  }
-
-  resolveSpanTree(): Array<{ name: string, parent?: string, isOpen: boolean }> {
-    const result: Array<{ name: string, parent?: string, isOpen: boolean }> = [];
-
-    const traverse = (span: Span, parent?: string) => {
-      result.push({
-        name: span.name,
-        parent,
-        isOpen: span.isOpen,
-      });
-
-      if (span.childrens) {
-        for (const child of span.childrens) {
-          traverse(child, span.name);
+  buildSpanTree(): Span[] {
+    const spanMap: { [key: string]: Span } = {};
+    this.spanList.forEach((span) => {
+      span.childrens = [];
+      spanMap[span.context] = span;
+    });
+    const rootSpans: Span[] = [];
+    this.spanList.forEach((span) => {
+      if (span.fatherId) {
+        const fatherSpan = spanMap[span.fatherId];
+        if (fatherSpan) {
+          fatherSpan.childrens!.push(span);
         }
       }
-    };
+      else {
+        rootSpans.push(span);
+      }
+    });
 
-    for (const span of this.spanTree.values()) {
-      traverse(span);
-    }
-
-    return result;
+    return rootSpans;
   }
+
 }
+
+// export class CallStack {
+//   stack: Array<Call> = [];
+//   spanTree: Map<string, Span> = new Map();
+
+//   clearStack() {
+//     this.stack = [];
+//   }
+
+//   addCall(service: string, method: string, args?: unknown) {
+//     this.stack.push({
+//       service,
+//       method,
+//       args,
+//     });
+//   }
+
+//   addSpan(name: string, context: string, fatherContext?: string) {
+//     const span: Span = {
+//       name,
+//       context,
+//       isOpen: true,
+//       childrens: [],
+//     };
+
+//     if (fatherContext) {
+//       const fatherSpan = this.spanTree.get(fatherContext);
+//       if (fatherSpan) {
+//         fatherSpan.childrens?.push(span);
+//       }
+//       else {
+//         throw new Error('fatherContext not found');
+//       }
+//     }
+
+//     this.spanTree.set(context, span);
+//   }
+
+//   addChildrenSpanTo(name: string, fatherContext: string) {
+//     const fatherSpan = this.spanTree.get(fatherContext);
+
+//     if (fatherSpan) {
+//       const childSpan: Span = {
+//         name,
+//         context: fatherSpan.context,
+//         isOpen: true,
+//         childrens: [],
+//       };
+
+//       fatherSpan.childrens?.push(childSpan);
+//     }
+//     else {
+//       const childSpan: Span = {
+//         name,
+//         context: fatherContext,
+//         isOpen: true,
+//         childrens: [],
+//       };
+//       this.spanTree.set(fatherContext, childSpan);
+//     }
+//   }
+
+//   closeSpan(name: string) {
+//     const span = this.spanTree.get(name);
+//     if (span) {
+//       span.childrens?.forEach((children) => {
+//         this.closeSpan(children.name);
+//       });
+//       span.isOpen = false;
+//       this.spanTree.set(name, span);
+//     }
+//   }
+
+//   resolveSpanTree(): Array<{ name: string, parent?: string, isOpen: boolean }> {
+//     const result: Array<{ name: string, parent?: string, isOpen: boolean }> = [];
+
+//     const traverse = (span: Span, parent?: string) => {
+//       result.push({
+//         name: span.name,
+//         parent,
+//         isOpen: span.isOpen,
+//       });
+
+//       if (span.childrens) {
+//         for (const child of span.childrens) {
+//           traverse(child, span.name);
+//         }
+//       }
+//     };
+
+//     for (const span of this.spanTree.values()) {
+//       traverse(span);
+//     }
+
+//     return result;
+//   }
+// }
 
 export const callStack = new CallStack();
 

@@ -2,7 +2,7 @@ import { AttributeValue, Span, SpanContext } from '@opentelemetry/api';
 import Log from 'debug-level';
 import { isUndefined } from 'util';
 
-import { callStack } from './callStack';
+// import { callStack } from './callStack';
 import { MockTransport } from './mockTransport';
 import { SpanOptions } from '../types';
 
@@ -17,7 +17,7 @@ export type ILogger = {
   error(message: string, error?: unknown, data?: SpanOptions): void;
   info(message: string, data?: SpanOptions): void;
   verbose(message: string, data?: SpanOptions): void;
-  get id(): unknown;
+  get id(): SpanContext;
 };
 
 export type LogType = 'info' | 'warn' | 'silly' | 'debug' | 'error' | 'verbose';
@@ -60,22 +60,20 @@ export class MockLogger implements ILogger {
   }
 
   public span(text: string, father?: SpanContext): ILogger {
-    try {
-      this.validateIsOpen();
-      const span = new MockLogger(
-        this.transport,
-        this.transport.childrenSpan(text, this._span, father),
-      );
-      this.childrens.push(span);
-      return span;
-    } catch (error) {
-      console.log(error);
-    }
+    this.validateIsOpen();
+    const span = new MockLogger(
+      this.transport,
+      this.transport.childrenSpan(text, this._span, father),
+    );
+    this.childrens.push(span);
+    return span;
+
   }
 
   public end(): void {
     this.childrens.forEach((children) => children.end());
     this._span?.end();
+    // callStack.closeSpan(this._span.spanContext().spanId);
     this._isOpen = false;
   }
 

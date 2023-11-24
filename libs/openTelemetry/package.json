@@ -13,7 +13,7 @@
     "debug-level": "^3.1.2"
   },
   "scripts": {
-    "test": "sh -ac '. ./.env; NODE_ENV=test nyc ts-mocha --require @opentelemetry/contrib-test-utils \"src/__tests__/*.test.ts\"'",
+    "test": "sh -ac '. ./.env; DEBUG_LEVEL=error NODE_ENV=test nyc ts-mocha --require @opentelemetry/contrib-test-utils \"src/__tests__/*.test.ts\"'",
     "build": "npx tsc"
   },
   "repository": {

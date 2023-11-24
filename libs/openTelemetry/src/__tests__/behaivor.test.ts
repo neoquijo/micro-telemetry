@@ -42,7 +42,8 @@ describe('Logger', () => {
       ],
     });
 
-    console.log(callStack.resolveSpanTree());
+    // console.log(callStack.resolveSpanTree());
+    console.log(JSON.stringify(callStack.buildSpanTree()));
 
   });
 
