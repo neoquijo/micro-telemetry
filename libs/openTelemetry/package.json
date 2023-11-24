@@ -45,7 +45,7 @@
     "mocha": "^10.2.0",
     "mocha-junit-reporter": "^2.2.1",
     "mocha-multi-reporters": "^1.5.1",
-    "nats-micro": "file:../nats-micro",
+    "nats-micro": "file:../nats-micro-js",
     "nyc": "^15.1.0",
     "prettier": "^3.0.3",
     "sinon": "^17.0.1",

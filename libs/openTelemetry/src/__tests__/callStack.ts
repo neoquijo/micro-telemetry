@@ -7,16 +7,17 @@ type Call = {
 type Span = {
   name: string,
   context: string,
-  childrens?: Span[],
+  childrens: Span[],
   father?: string,
   fatherId?: string,
   isOpen: boolean
+  closedAt?: number
 }
 
 export class CallStack {
   stack: Array<Call> = [];
   spanList: Array<Span> = [];
-  spanTree: Map<string, Span> = new Map();
+  spanTree: Span[] = [];
 
   addCall(service: string, method: string, args?: unknown) {
     this.stack.push({
@@ -27,6 +28,7 @@ export class CallStack {
   }
 
   addSpan(name: string, spanId: string, fatherId?: string) {
+
     const span = {
       name,
       context: spanId,
@@ -35,29 +37,71 @@ export class CallStack {
       childrens: [],
     };
     this.spanList.push(span);
+    this.spanTree = this.buildSpanTree();
   }
 
-  buildSpanTree(): Span[] {
+  closeSpan(context: string): void {
+    const span = this.spanList.find((item) => item.context === context);
+    if (span) {
+      span.closedAt = new Date().getTime();
+      span.isOpen = false;
+    }
+  }
+
+  getSpan(name: string): Span {
+    const span = this.spanList.find((item) => item.name === name)!;
+    return span;
+  }
+
+  private buildSpanTree(): Span[] {
     const spanMap: { [key: string]: Span } = {};
+    const rootSpans: Span[] = [];
+
     this.spanList.forEach((span) => {
       span.childrens = [];
       spanMap[span.context] = span;
     });
-    const rootSpans: Span[] = [];
+
     this.spanList.forEach((span) => {
       if (span.fatherId) {
         const fatherSpan = spanMap[span.fatherId];
-        if (fatherSpan) {
+        span.
+          if(fatherSpan) {
           fatherSpan.childrens!.push(span);
         }
       }
-      else {
-        rootSpans.push(span);
+    });
+
+    this.spanList.forEach((span) => {
+      if (!span.fatherId && span.childrens.length > 0) {
+        rootSpans.push(...span.childrens);
       }
     });
 
     return rootSpans;
   }
+
+  // buildSpanTree(): Span[] {
+  //   const spanMap: { [key: string]: Span } = {};
+  //   this.spanList.forEach((span) => {
+  //     span.childrens = [];
+  //     spanMap[span.context] = span;
+  //   });
+  //   const rootSpans: Span[] = [];
+  //   this.spanList.forEach((span) => {
+  //     if (span.fatherId) {
+  //       const fatherSpan = spanMap[span.fatherId];
+  //       if (fatherSpan) {
+  //         fatherSpan.childrens!.push(span);
+  //       }
+  //     }
+  //     else {
+  //       rootSpans.push(span);
+  //     }
+  //   });
+
+  //   return rootSpans;
+  // }
 
 }
 

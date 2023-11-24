@@ -72,6 +72,10 @@ export class OpenTelemetryLogger {
     return childSpan;
   }
 
+  spanFromContext(ctx: SpanContext) {
+    return trace.getSpan(trace.setSpanContext(context.active(), ctx));
+  }
+
   private populateSpan(span: Span, options?: ISpanOptions) {
     if (options?.attributes)
       span.setAttributes(options.attributes);

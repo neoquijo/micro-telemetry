@@ -67,6 +67,10 @@ export class MockTransport {
     return parentSpan;
   }
 
+  spanFromContext(ctx: SpanContext) {
+    return trace.getSpan(trace.setSpanContext(context.active(), ctx));
+  }
+
   childrenSpan(name: string, father: Span, fromSpan?: SpanContext, options?: ISpanOptions): Span {
     const activeContext = context.active();
     const span = fromSpan && trace.getSpan(trace.setSpanContext(activeContext, fromSpan));

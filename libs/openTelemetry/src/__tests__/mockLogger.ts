@@ -3,6 +3,7 @@ import Log from 'debug-level';
 import { isUndefined } from 'util';
 
 // import { callStack } from './callStack';
+import { callStack } from './callStack';
 import { MockTransport } from './mockTransport';
 import { SpanOptions } from '../types';
 
@@ -73,6 +74,7 @@ export class MockLogger implements ILogger {
   public end(): void {
     this.childrens.forEach((children) => children.end());
     this._span?.end();
+    callStack.closeSpan(this._span.spanContext().spanId);
     // callStack.closeSpan(this._span.spanContext().spanId);
     this._isOpen = false;
   }
@@ -123,12 +125,43 @@ export class MockLogger implements ILogger {
   }
 }
 
+function parseTraceparent(traceparentHeader: string): SpanContext {
+  const [
+    traceId, spanId, traceFlagsHex,
+  ] = traceparentHeader.split('-');
+
+  if (traceId && spanId && traceFlagsHex) {
+    const traceFlags = parseInt(traceFlagsHex, 16);
+    return {
+      traceId,
+      spanId,
+      traceFlags,
+    };
+  }
+  throw new Error('Invalid traceparent header format.');
+
+}
+
+export function createTraceparent(ctx: SpanContext): string {
+  const {
+    traceId, spanId, traceFlags,
+  } = ctx;
+
+  if (traceId && spanId) {
+    const traceFlagsHex = traceFlags.toString(16).padStart(2, '0');
+    const traceparentHeader = `${traceId}-${spanId}-${traceFlagsHex}`;
+    return traceparentHeader;
+  }
+  throw new Error('Invalid context');
+
+}
+
 export function extractLogContextFromHeaders(
   headers: Iterable<[string, string]>,
 ): SpanContext | undefined {
   for (const [headerKey, headerValue] of headers) {
-    if (headerKey.toLowerCase() === 'X-LOG-SPAN-ID'.toLowerCase()) {
-      return JSON.parse(headerValue);
+    if (headerKey.toLowerCase() === 'traceparent'.toLowerCase()) {
+      return parseTraceparent(headerValue);
     }
   }
   return undefined;

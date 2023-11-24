@@ -1,26 +1,27 @@
 import { SpanContext } from '@opentelemetry/api';
 
-import { Logger } from './logger';
-import { OpenTelemetryLogger } from './openTelemetryLogger';
+import { MockLogger } from './mockLogger';
+import { MockTransport } from './mockTransport';
+import { ILogger } from '../logger';
 
 class LoggerFactory {
-  private readonly loggerMap: Map<string, Logger> = new Map();
+  private readonly loggerMap: Map<string, MockLogger> = new Map();
 
-  public use(name: string, context?: SpanContext): Logger {
+  public use(name: string, context?: SpanContext): ILogger | MockLogger {
     if (this.loggerMap.has(name)) {
       return this.loggerMap.get(name)!;
     }
 
-    const openTelemetryLogger = new OpenTelemetryLogger().init(name);
+    const openTelemetryLogger = new MockTransport().init(name);
     const span =
       context !== undefined
         ? openTelemetryLogger.spanFromContext(context)!
         : openTelemetryLogger.span(name);
 
-    const logger = new Logger(openTelemetryLogger, span);
+    const logger = new MockLogger(openTelemetryLogger, span);
     this.loggerMap.set(name, logger);
 
-    return logger;
+    return context !== undefined ? logger.span(name) : logger;
   }
 
   public forget(name: string): void {
@@ -32,4 +33,4 @@ class LoggerFactory {
   }
 }
 
-export const loggerFactory = new LoggerFactory();
+export const mockFactory = new LoggerFactory();

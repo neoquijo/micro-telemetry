@@ -7,8 +7,10 @@ import { MS1 } from './services/ms1';
 import { MS2 } from './services/ms2';
 import { MS3 } from './services/ms3';
 import { callStack } from './callStack';
+import { brokerInstance } from './services/broker';
+import { expect } from 'chai';
 
-const broker = new InMemoryBroker();
+const broker = brokerInstance;
 
 describe('Logger', () => {
 
@@ -42,8 +44,9 @@ describe('Logger', () => {
       ],
     });
 
-    // console.log(callStack.resolveSpanTree());
-    console.log(JSON.stringify(callStack.buildSpanTree()));
+    console.log(JSON.stringify(callStack.spanTree));
+    expect(callStack.getSpan('ms1').childrens.length).length.to.eq(1);
+    expect(callStack.getSpan('ms1.func').father)
 
   });
 
