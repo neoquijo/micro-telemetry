@@ -1,6 +1,8 @@
-/.env
+.env
 /node_modules
 /**/node_modules
 libs/**/lib
 libs/**/node_modules
 libs/nats-micro
+.nyc_output
+coverage
