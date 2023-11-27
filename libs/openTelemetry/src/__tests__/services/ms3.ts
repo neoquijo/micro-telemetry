@@ -2,17 +2,9 @@ import {
   microservice, method, Request, Response,
   z,
 } from 'nats-micro';
-import { broker } from './broker';
-import { extractLogContextFromHeaders } from '../../logger';
-import { loggerFactory } from '../../loggerFactory';
 
-
-
-const IRequest = z.object({
-  algo: z.string(),
-})
-
-type Req = z.infer<typeof IRequest>
+import { mockFactory } from '../mockFactory';
+import { extractLogContextFromHeaders } from '../mockLogger';
 
 @microservice({
   name: 'ms3',
@@ -26,19 +18,7 @@ export class MS3 {
     request: z.string(),
     response: z.void(),
   })
-  async algo(req: Request<string>, res: Response<void>) {
-    const log = loggerFactory.use(req.handler.microservice);
-    const noseque = log.span('ms3', extractLogContextFromHeaders(req.headers))
-    console.log('ms3')
-    await broker.send({
-      microservice: 'ms1',
-      method: 'algo'
-    },
-      ' {},,',
-      {
-        headers:
-          [['X-LOG-SPAN-ID', JSON.stringify(noseque.id)]],
-      })
-    noseque.end();
+  async test2(req: Request<string>, res: Response<void>) {
+    const log = mockFactory.use('ms3', extractLogContextFromHeaders(req.headers!)).end();
   }
 }

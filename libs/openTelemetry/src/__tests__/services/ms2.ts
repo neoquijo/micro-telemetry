@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   microservice, method, Request, Response,
   z,
@@ -7,13 +9,9 @@ import { loggerFactory } from '../../loggerFactory';
 import { mockFactory } from '../mockFactory';
 import { extractLogContextFromHeaders } from '../mockLogger';
 
-export const log = loggerFactory.use('ms2');
-
 const IRequest = z.object({
   algo: z.string(),
-})
-
-type Req = z.infer<typeof IRequest>
+});
 
 @microservice({
   name: 'ms2',
@@ -27,10 +25,25 @@ export class MS2 {
     request: z.string(),
     response: z.string(),
   })
-  algo(req: Request<string>, res: Response<string>) {
+  test1(req: Request<string>, res: Response<string>) {
     const log = mockFactory.use('ms2', extractLogContextFromHeaders(req.headers!));
     log.span('ms2func');
     log.end();
-    return 'response from ms2';
+    setTimeout(() => {
+      res.send('somme response');
+    }, 1000);
+
   }
+
+  // @ts-ignore
+  @method({
+    request: z.string(),
+    response: z.string(),
+  })
+  test2(req: Request<string>, res: Response<string>) {
+    const log = mockFactory.use('ms2', extractLogContextFromHeaders(req.headers!)).end();
+    res.send('algo');
+    return 'algo';
+  }
+
 }
