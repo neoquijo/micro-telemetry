@@ -1,6 +1,6 @@
 import { SpanContext } from '@opentelemetry/api';
 import { expect } from 'chai';
-import { Microservice } from 'nats-micro';
+import { Microservice, method, microservice, Request, Response, } from 'nats-micro';
 
 import { loggerFactory, transport } from './mockLogs';
 
@@ -11,8 +11,13 @@ import { mockRequest } from './mockRequest';
 import { MS1 } from './services/ms1';
 import { MS2 } from './services/ms2';
 import { MS3 } from './services/ms3';
+import sinon from 'sinon';
+import { request } from '../microserviceUtils';
 
 const broker = brokerInstance;
+
+const startSpanSpy = sinon.spy(transport, 'span');
+const endSpanSpy = sinon.spy(transport, 'endSpan');
 
 describe('Logger', () => {
 
@@ -28,25 +33,53 @@ describe('Logger', () => {
 
   afterEach(() => {
     callStack.clear();
+    sinon.resetHistory();
   });
 
-  it('2 microservices 4 spans', async function () {
-    this.timeout(5000);
-    const response = await mockRequest('ms1', 'test1');
+  it('simple microservice with one endpoint', async function () {
 
-    expect(transport.callStack.getSpan('ms1').father).to.eq('ms1');
+    @microservice()
+    class Test {
+      @method<void, string>()
+      method1(_req: Request<void>, res: Response<string>): void {
+        const log = loggerFactory.use('test');
+        const l = log.span('method');
+        res.send('method1 result');
+        l.end();
+      }
+    }
 
-    // expect(callStack.getSpan('ms1').father).to.eq('ms1');
-    // expect(callStack.getSpan('ms1func').father).to.eq('ms1');
-    // expect(callStack.getSpan('ms2span').childrens.length).length.to.eq(1);
-    // expect(callStack.getSpan('ms2func').father).to.eq('ms2span');
-    // expect(callStack.map((span) => span).every((span) => span.isOpen === false)).to.be.true;
-    // expect(callStack.spanList.length).to.eq(
-    //   mockFactory.instances + callStack.map((span) => span).length,
-    // ); // Кол-во спанов 4 + 2 корневых спана от инстанса
-    // expect(mockFactory.instances).to.eq(2);
+    await Microservice.createFromClass(brokerInstance, new Test());
 
+    expect(startSpanSpy.callCount).to.eq(0);
+    expect(endSpanSpy.callCount).to.eq(0);
+
+    const response = await request(brokerInstance, 'test', 'method1', '');
+    expect(response).to.eq('method1 result');
+
+    expect(startSpanSpy.callCount).to.eq(1);
+    expect(startSpanSpy.firstCall.args).to.deep.eq(['method1']);
+
+    expect(endSpanSpy.callCount).to.eq(1);
   });
+
+  // it('2 microservices 4 spans', async function () {
+  //   this.timeout(5000);
+  //   const response = await mockRequest('ms1', 'test1');
+
+  //   expect(transport.callStack.getSpan('ms1').father).to.eq('ms1');
+
+  //   expect(callStack.getSpan('ms1').father).to.eq('ms1');
+  //   expect(callStack.getSpan('ms1func').father).to.eq('ms1');
+  //   expect(callStack.getSpan('ms2span').childrens.length).length.to.eq(1);
+  //   expect(callStack.getSpan('ms2func').father).to.eq('ms2span');
+  //   expect(callStack.map((span) => span).every((span) => span.isOpen === false)).to.be.true;
+  //   expect(callStack.spanList.length).to.eq(
+  //     mockFactory.instances + callStack.map((span) => span).length,
+  //   ); // Кол-во спанов 4 + 2 корневых спана от инстанса
+  //   // expect(mockFactory.instances).to.eq(2);
+
+  // });
 
   it('minimal');
 
