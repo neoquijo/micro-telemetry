@@ -7,7 +7,7 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import { BasicTracerProvider, BatchSpanProcessor, SimpleSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { Ctx, ISpanOptions, Event } from './types';
-import { callStack } from './__tests__/callStack';
+import { LogTransport } from './logTransport';
 
 let sdk: NodeSDK;
 
@@ -16,7 +16,7 @@ export function startOpenTelemetrySdk() {
   sdk.start();
 }
 
-export class OpenTelemetryLogger {
+export class OpenTelemetryLogTransport implements LogTransport {
 
   private tracer: Tracer | undefined;
   private _span: Span | undefined;
@@ -30,7 +30,7 @@ export class OpenTelemetryLogger {
       startOpenTelemetrySdk();
   }
 
-  public init(name: string): OpenTelemetryLogger {
+  public init(name: string): OpenTelemetryLogTransport {
     this.name = name;
     const provider = this.createProvider(this.name);
     this.tracer = provider.getTracer(process.title);

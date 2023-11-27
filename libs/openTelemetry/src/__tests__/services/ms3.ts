@@ -3,8 +3,8 @@ import {
   z,
 } from 'nats-micro';
 
-import { mockFactory } from '../mockFactory';
-import { extractLogContextFromHeaders } from '../mockLogger';
+import { extractLogContextFromHeaders } from '../microserviceUtils';
+import { LoggerFactory } from '../../loggerFactory';
 
 @microservice({
   name: 'ms3',
@@ -14,11 +14,12 @@ import { extractLogContextFromHeaders } from '../mockLogger';
 export class MS3 {
   // public microservice: Microservice | undefined;
 
+  // @ts-ignore
   @method({
     request: z.string(),
     response: z.void(),
   })
   async test2(req: Request<string>, res: Response<void>) {
-    const log = mockFactory.use('ms3', extractLogContextFromHeaders(req.headers!)).end();
+    const log = LoggerFactory.inst.use('ms3', extractLogContextFromHeaders(req.headers!)).end();
   }
 }

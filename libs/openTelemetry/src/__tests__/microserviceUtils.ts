@@ -1,4 +1,4 @@
-import { SpanContext } from '@opentelemetry/api';
+import { SpanContext, isValidSpanId } from '@opentelemetry/api';
 import { RequestOptions } from 'nats-micro';
 import { brokerInstance } from './broker';
 
@@ -19,18 +19,23 @@ function parseTraceparent(traceparentHeader: string): SpanContext {
 
 }
 
-export function createTraceparent(ctx: SpanContext): string {
+export function createTraceParent(ctx?: SpanContext): string | undefined {
+
+  if (!ctx || !isValidSpanId(ctx.spanId))
+    return undefined;
+
   const {
     traceId, spanId, traceFlags,
   } = ctx;
 
+  // TODO проверить, нужна ли эта проверка после вызова isValidSpanId
   if (traceId && spanId) {
     const traceFlagsHex = traceFlags.toString(16).padStart(2, '0');
     const traceparentHeader = `${traceId}-${spanId}-${traceFlagsHex}`;
     return traceparentHeader;
   }
-  throw new Error('Invalid context');
 
+  throw new Error('Invalid context');
 }
 
 export function extractLogContextFromHeaders(
@@ -48,9 +53,11 @@ export async function request<R, T>(
   service: string,
   method: string,
   data: R,
-  spanContext: SpanContext,
+  spanContext?: SpanContext,
   options: Partial<RequestOptions> = {},
 ): Promise<T | undefined> {
+
+  const traceParent = createTraceParent(spanContext);
 
   return (await brokerInstance.request<R, T>(
     {
@@ -61,8 +68,13 @@ export async function request<R, T>(
     {
       ...options,
       headers: [
-        ['traceparent', createTraceparent(spanContext)],
+        ...(
+          traceParent
+            ? [['traceparent', traceParent]]
+            : []
+        ) as [string, string][],
       ],
     }
   )).data;
 }
+

@@ -5,9 +5,8 @@ import {
   z,
 } from 'nats-micro';
 
-import { loggerFactory } from '../../loggerFactory';
-import { mockFactory } from '../mockFactory';
-import { extractLogContextFromHeaders } from '../mockLogger';
+import { extractLogContextFromHeaders } from '../microserviceUtils';
+import { LoggerFactory } from '../../loggerFactory';
 
 const IRequest = z.object({
   algo: z.string(),
@@ -26,7 +25,7 @@ export class MS2 {
     response: z.string(),
   })
   test1(req: Request<string>, res: Response<string>) {
-    const log = mockFactory.use('ms2', extractLogContextFromHeaders(req.headers!));
+    const log = LoggerFactory.inst.use('ms2', extractLogContextFromHeaders(req.headers!));
     log.span('ms2func');
     log.end();
     setTimeout(() => {
@@ -41,7 +40,7 @@ export class MS2 {
     response: z.string(),
   })
   test2(req: Request<string>, res: Response<string>) {
-    const log = mockFactory.use('ms2', extractLogContextFromHeaders(req.headers!)).end();
+    const log = LoggerFactory.inst.use('ms2', extractLogContextFromHeaders(req.headers!)).end();
     res.send('algo');
     return 'algo';
   }

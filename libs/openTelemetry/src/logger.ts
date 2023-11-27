@@ -2,8 +2,8 @@ import { AttributeValue, Span, SpanContext } from '@opentelemetry/api';
 import Log from 'debug-level';
 import { isUndefined } from 'util';
 
-import { OpenTelemetryLogger } from './openTelemetryLogger';
-import { Ctx, SpanOptions } from './types';
+import { SpanOptions } from './types';
+import { LogTransport } from './logTransport';
 
 export type { AttributeValue } from '@opentelemetry/api';
 
@@ -32,7 +32,7 @@ export class Logger implements ILogger {
   private readonly childrens: Logger[] = [];
   private readonly log: ILogType;
   constructor(
-    private readonly transport: OpenTelemetryLogger,
+    private readonly transport: LogTransport,
     private readonly _span: Span
   ) {
     this.log = {

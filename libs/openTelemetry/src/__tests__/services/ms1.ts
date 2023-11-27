@@ -4,10 +4,9 @@ import {
   z, Microservice,
 } from 'nats-micro';
 
-import { loggerFactory } from '../../loggerFactory';
+import { LoggerFactory } from '../../loggerFactory';
 import { request } from '../microserviceUtils';
-
-const log = loggerFactory.use('ms1');
+import { logger } from 'debug-level/types';
 
 @microservice({
   name: 'ms1',
@@ -21,6 +20,7 @@ export class MS1 {
   // @ts-ignore
   @method<string, string>()
   async test1(req: Request<string>, res: Response<string>): Promise<void> {
+    const log = LoggerFactory.inst.use('ms1');
     log.span('test1');
 
     await request('ms2', 'test1', 'mockData', log.id);
@@ -32,6 +32,7 @@ export class MS1 {
   // @ts-ignore
   @method<string, string>()
   async test2(req: Request<string>, res: Response<string>): Promise<void> {
+    const log = LoggerFactory.inst.use('ms1');
     log.span('test2');
 
     await request('ms2', 'test2', 'mockData', log.id);

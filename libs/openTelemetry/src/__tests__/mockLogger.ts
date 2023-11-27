@@ -4,7 +4,7 @@ import { isUndefined } from 'util';
 
 // import { callStack } from './callStack';
 import { callStack } from './callStack';
-import { MockTransport } from './mockTransport';
+import { MockTransport } from './mockLogTransport';
 import { SpanOptions } from '../types';
 
 export type { AttributeValue } from '@opentelemetry/api';

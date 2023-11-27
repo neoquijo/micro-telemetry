@@ -2,9 +2,12 @@ import { SpanContext } from '@opentelemetry/api';
 import { expect } from 'chai';
 import { Microservice } from 'nats-micro';
 
+import { loggerFactory } from './mockLogs';
+
 import { callStack } from './callStack';
-import { mockFactory } from './mockFactory';
-import { brokerInstance, mockRequest } from './broker';
+import { brokerInstance } from './broker';
+import { mockRequest } from './mockRequest';
+
 import { MS1 } from './services/ms1';
 import { MS2 } from './services/ms2';
 import { MS3 } from './services/ms3';
