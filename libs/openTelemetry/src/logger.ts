@@ -30,9 +30,10 @@ export class Logger<T> implements ILogger {
   // eslint-disable-next-line no-use-before-define
   private readonly childrens: Logger<T>[] = [];
   private readonly log: ILogType;
+
   constructor(
     private readonly transport: LogTransport<T>,
-    private readonly _span?: T
+    private readonly _span?: T | string,
   ) {
     this.log = {
       error: new Log(`${this.transport.name}:error`, { level: 'ERROR' }).error,
@@ -45,6 +46,9 @@ export class Logger<T> implements ILogger {
   }
 
   public get id(): string | undefined {
+    if (typeof (this._span) === 'string')
+      return this._span;
+
     return this._span ? this.transport.getSpanId(this._span) : undefined;
   }
 
@@ -57,14 +61,24 @@ export class Logger<T> implements ILogger {
       throw new Error('Span is already closed');
   }
 
-  public span(text: string, father?: SpanContext): ILogger {
+  private createTransportSpan(text: string): T {
+    return this.transport.childrenSpanInId(text, this.id);
+  }
+
+  public span(text: string): ILogger {
     this.validateIsOpen();
-    const child = new Logger<T>(this.transport, this.transport.childrenSpan(text, this._span, father));
+    const child = new Logger<T>(this.transport, this.createTransportSpan(text));
     this.childrens.push(child);
     return child;
   }
 
   public end(): void {
+    if (!this._isOpen)
+      return;
+
+    if (typeof (this._span) === 'string')
+      throw new Error('Cannot close span by it\'s id');
+
     this.childrens.forEach((children) => children.end());
     if (this._span)
       this.transport.endSpan(this._span);
@@ -74,7 +88,7 @@ export class Logger<T> implements ILogger {
   public addLog(logLevel: LogType, message: string, data: Record<string, AttributeValue>): void {
     this.validateIsOpen();
     const rawMessage = message.replace(/\w+\[\[([^\]]+)\]\]/g, '$1');
-    const span = this.transport.childrenSpan(rawMessage, this._span);
+    const span = this.createTransportSpan(rawMessage);
     this.transport.addSpanAttributes(span, { level: logLevel });
     this.transport.addSpanAttributes(span, data);
     this.transport.endSpan(span);

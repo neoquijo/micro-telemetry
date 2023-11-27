@@ -36,10 +36,10 @@ export function createTraceParent(ctx: SpanContext): string {
 
 export function extractLogContextFromHeaders(
   headers: Iterable<[string, string]>,
-): SpanContext | undefined {
+): string | undefined {
   for (const [headerKey, headerValue] of headers) {
     if (headerKey.toLowerCase() === 'traceparent'.toLowerCase()) {
-      return parseTraceparent(headerValue);
+      return headerValue;
     }
   }
   return undefined;

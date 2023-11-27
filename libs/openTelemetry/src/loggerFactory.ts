@@ -16,17 +16,16 @@ export class LoggerFactory<T> {
   public constructor(public readonly transport: LogTransport<T>) {
   }
 
-  public use(name: string, context?: SpanContext): Logger<T> {
+  public use(name: string, parentId?: string): Logger<T> {
     if (this.loggerMap.has(name)) {
       return this.loggerMap.get(name)!;
     }
 
-    const span =
-      context !== undefined
-        ? this.transport.spanFromContext(context)!
-        : this.transport.span(name);
+    const logger = new Logger<T>(
+      this.transport,
+      parentId,
+    );
 
-    const logger = new Logger<T>(this.transport, span);
     this.loggerMap.set(name, logger);
 
     return logger;

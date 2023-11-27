@@ -3,13 +3,13 @@ import { AttributeValue, Attributes, ISpanOptions, SpanContext } from './types';
 export interface LogTransport<T> {
   get name(): string;
 
-  span(name: string): T;
   endSpan(span: T): void;
 
-  spanFromContext(context: SpanContext): T | undefined;
-  childrenSpan(name: string, father: T, fromSpan?: SpanContext, options?: ISpanOptions): T;
+  childrenSpan(name: string, father?: T, options?: ISpanOptions): T;
+  childrenSpanInId(name: string, parentId: string | undefined): T;
 
   addSpanAttributes(span: T, attributes: Attributes): void;
 
   getSpanId(span: T): string;
+  getSpanTraceId(span: T): string;
 }

@@ -16,7 +16,8 @@ import { request } from '../microserviceUtils';
 
 const broker = brokerInstance;
 
-const startSpanSpy = sinon.spy(transport, 'span');
+// const startSpanSpy = sinon.spy(transport, 'childrenSpan');
+const startSpanInIdSpy = sinon.spy(transport, 'childrenSpanInId');
 const endSpanSpy = sinon.spy(transport, 'endSpan');
 
 describe('Logger', () => {
@@ -43,7 +44,7 @@ describe('Logger', () => {
       @method<void, string>()
       method1(_req: Request<void>, res: Response<string>): void {
         const log = loggerFactory.use('test');
-        const l = log.span('method');
+        const l = log.span('method1');
         res.send('method1 result');
         l.end();
       }
@@ -51,16 +52,60 @@ describe('Logger', () => {
 
     await Microservice.createFromClass(brokerInstance, new Test());
 
-    expect(startSpanSpy.callCount).to.eq(0);
-    expect(endSpanSpy.callCount).to.eq(0);
-
     const response = await request(brokerInstance, 'test', 'method1', '');
     expect(response).to.eq('method1 result');
 
-    expect(startSpanSpy.callCount).to.eq(1);
-    expect(startSpanSpy.firstCall.args).to.deep.eq(['method1']);
+    expect(startSpanInIdSpy.callCount).to.eq(1);
+    expect(startSpanInIdSpy.firstCall.firstArg).to.eq('method1');
 
     expect(endSpanSpy.callCount).to.eq(1);
+  });
+
+  it('nested microservices', async function () {
+
+    let parentId: string | undefined = undefined;
+
+    @microservice()
+    class Test1 {
+      // @ts-ignore
+      @method<void, string>()
+      async method1(_req: Request<void>, res: Response<string>): Promise<void> {
+        const log = loggerFactory.use('test1');
+        const l = log.span('test1.method1');
+
+        parentId = (l.id as string); // TODO не должно быть приведения типа
+
+        request(brokerInstance, 'test2', 'method1', '');
+
+        res.send('method1 result');
+        l.end();
+      }
+    }
+
+    @microservice()
+    class Test2 {
+      @method<void, string>()
+      method1(_req: Request<void>, res: Response<string>): void {
+        const log = loggerFactory.use('test2', parentId);
+        const l = log.span('test2.method1');
+        res.send('method1 result');
+        l.end();
+      }
+    }
+
+    await Microservice.createFromClass(brokerInstance, new Test1());
+    await Microservice.createFromClass(brokerInstance, new Test2());
+
+    const response = await request(brokerInstance, 'test1', 'method1', '');
+    expect(response).to.eq('method1 result');
+
+    expect(startSpanInIdSpy.callCount).to.eq(2);
+    expect(startSpanInIdSpy.firstCall.firstArg).to.eq('test1.method1');
+    expect(startSpanInIdSpy.secondCall.firstArg).to.eq('test2.method1');
+
+    expect(endSpanSpy.callCount).to.eq(2);
+
+    expect(transport.getSpanStackTraceAsStrings(startSpanInIdSpy.secondCall.returnValue)).to.eql([ 'test2.method1', 'from string' ]);
   });
 
   // it('2 microservices 4 spans', async function () {
