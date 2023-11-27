@@ -2,7 +2,7 @@ import { SpanContext } from '@opentelemetry/api';
 import { expect } from 'chai';
 import { Microservice } from 'nats-micro';
 
-import { loggerFactory } from './mockLogs';
+import { loggerFactory, transport } from './mockLogs';
 
 import { callStack } from './callStack';
 import { brokerInstance } from './broker';
@@ -33,6 +33,8 @@ describe('Logger', () => {
   it('2 microservices 4 spans', async function () {
     this.timeout(5000);
     const response = await mockRequest('ms1', 'test1');
+
+    expect(transport.callStack.getSpan('ms1').father).to.eq('ms1');
 
     // expect(callStack.getSpan('ms1').father).to.eq('ms1');
     // expect(callStack.getSpan('ms1func').father).to.eq('ms1');

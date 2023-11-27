@@ -23,7 +23,6 @@ export class LoggerFactory {
       return this.loggerMap.get(name)!;
     }
 
-    this.transport.init(name);
     const span =
       context !== undefined
         ? this.transport.spanFromContext(context)!

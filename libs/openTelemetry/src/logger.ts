@@ -67,7 +67,7 @@ export class Logger implements ILogger {
 
   public end(): void {
     this.childrens.forEach((children) => children.end());
-    this._span?.end();
+    this.transport.endSpan(this._span);
     this._isOpen = false;
   }
 

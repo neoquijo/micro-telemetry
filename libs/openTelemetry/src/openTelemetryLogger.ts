@@ -20,22 +20,19 @@ export class OpenTelemetryLogTransport implements LogTransport {
 
   private tracer: Tracer | undefined;
   private _span: Span | undefined;
-  public name: string | undefined;
-  constructor() {
+  
+  constructor(public readonly name: string) {
     this.checkSdk();
+
+    this.name = name;
+    const provider = this.createProvider(this.name);
+    this.tracer = provider.getTracer(process.title);
+    // this._span = this.tracer.startSpan(this.name);
   }
 
   private checkSdk() {
     if (!sdk)
       startOpenTelemetrySdk();
-  }
-
-  public init(name: string): OpenTelemetryLogTransport {
-    this.name = name;
-    const provider = this.createProvider(this.name);
-    this.tracer = provider.getTracer(process.title);
-    this._span = this.tracer.startSpan(this.name);
-    return this;
   }
 
   private createProvider(name: string) {
@@ -54,7 +51,7 @@ export class OpenTelemetryLogTransport implements LogTransport {
     return provider;
   }
 
-  end(span: Span) {
+  endSpan(span: Span): void {
     span.end();
   }
 
