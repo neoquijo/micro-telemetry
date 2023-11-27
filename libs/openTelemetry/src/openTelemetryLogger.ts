@@ -1,5 +1,5 @@
 /* eslint-disable import/no-unresolved */
-import { Span, SpanContext, Tracer, context, propagation, trace, } from '@opentelemetry/api';
+import { Attributes, Span, SpanContext, Tracer, context, propagation, trace, } from '@opentelemetry/api';
 import { setSpan } from '@opentelemetry/api/build/src/trace/context-utils';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { Resource } from '@opentelemetry/resources/';
@@ -8,6 +8,7 @@ import { BasicTracerProvider, BatchSpanProcessor, SimpleSpanProcessor, ConsoleSp
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { Ctx, ISpanOptions, Event } from './types';
 import { LogTransport } from './logTransport';
+import { createTraceParent } from './microserviceUtils';
 
 let sdk: NodeSDK;
 
@@ -16,7 +17,7 @@ export function startOpenTelemetrySdk() {
   sdk.start();
 }
 
-export class OpenTelemetryLogTransport implements LogTransport {
+export class OpenTelemetryLogTransport implements LogTransport<Span> {
 
   private tracer: Tracer | undefined;
   private _span: Span | undefined;
@@ -55,6 +56,11 @@ export class OpenTelemetryLogTransport implements LogTransport {
     span.end();
   }
 
+  getSpanId(span: Span): string {
+    const ctx = span.spanContext();
+    return createTraceParent(ctx);
+  }
+
   span(name: string, options?: ISpanOptions): Span {
     const parentSpan = this.tracer!.startSpan(name, options);
     this.populateSpan(parentSpan, options);
@@ -81,5 +87,9 @@ export class OpenTelemetryLogTransport implements LogTransport {
       event?.attributes,
       event?.startTime,
     ));
+  }
+
+  public addSpanAttributes(span: Span, attributes: Attributes): void {
+    span.setAttributes(attributes);
   }
 }

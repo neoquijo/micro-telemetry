@@ -1,6 +1,5 @@
 import { SpanContext, isValidSpanId } from '@opentelemetry/api';
-import { RequestOptions } from 'nats-micro';
-import { brokerInstance } from './broker';
+import { Broker, RequestOptions } from 'nats-micro';
 
 function parseTraceparent(traceparentHeader: string): SpanContext {
   const [
@@ -19,10 +18,7 @@ function parseTraceparent(traceparentHeader: string): SpanContext {
 
 }
 
-export function createTraceParent(ctx?: SpanContext): string | undefined {
-
-  if (!ctx || !isValidSpanId(ctx.spanId))
-    return undefined;
+export function createTraceParent(ctx: SpanContext): string {
 
   const {
     traceId, spanId, traceFlags,
@@ -50,16 +46,15 @@ export function extractLogContextFromHeaders(
 }
 
 export async function request<R, T>(
+  broker: Broker,
   service: string,
   method: string,
   data: R,
-  spanContext?: SpanContext,
+  traceParent?: string,
   options: Partial<RequestOptions> = {},
 ): Promise<T | undefined> {
 
-  const traceParent = createTraceParent(spanContext);
-
-  return (await brokerInstance.request<R, T>(
+  return (await broker.request<R, T>(
     {
       microservice: service,
       method,

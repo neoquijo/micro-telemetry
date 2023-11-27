@@ -1,30 +1,43 @@
-import { Span, SpanContext } from '@opentelemetry/api';
 import { LogTransport } from '../logTransport';
-import { ISpanOptions } from '../types';
+
+import type { Attributes, ISpanOptions, SpanContext } from '../types';
 
 export class SpanCallStack {
 
 }
 
-export class MockLogTransport implements LogTransport {
+export type MockSpan = {
+  // id: string;
+  // isOpen: boolean;
+  // children: MockSpan[];
+  // attributes: Attributes;
+};
 
+export class MockLogTransport implements LogTransport<MockSpan> {
   public readonly name = 'mock';
 
   public readonly callStack = new SpanCallStack();
 
-  childrenSpan(name: string, father: Span, fromSpan?: SpanContext | undefined, options?: ISpanOptions | undefined): Span {
-    throw new Error('Method not implemented.');
+  childrenSpan(name: string, father: MockSpan, fromSpan?: SpanContext | undefined, options?: ISpanOptions | undefined): MockSpan {
+    return {};
   }
 
-  span(name: string): Span {
-    throw new Error('Method not implemented.');
-  }
-  
-  endSpan(span: Span): void {
-    throw new Error('Method not implemented.');
+  span(name: string): MockSpan {
+    return {};
   }
 
-  spanFromContext(context: SpanContext): Span | undefined {
-    throw new Error('Method not implemented.');
+  endSpan(span: MockSpan): void {
+  }
+
+  spanFromContext(context: SpanContext): MockSpan | undefined {
+    return {};
+  }
+
+  addSpanAttributes(span: MockSpan, attributes: Attributes): void {
+    // span.attributes = { ...span.attributes, ...attributes };
+  }
+
+  getSpanId(span: MockSpan): string {
+    return '';
   }
 }

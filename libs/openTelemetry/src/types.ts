@@ -1,7 +1,7 @@
-import { AttributeValue, Attributes, TimeInput, SpanContext } from '@opentelemetry/api';
+import { Attributes, TimeInput } from '@opentelemetry/api';
 import { Span } from '@opentelemetry/sdk-trace-node';
 
-export type { AttributeValue, SpanContext } from '@opentelemetry/api';
+export type { AttributeValue, SpanContext, Attributes } from '@opentelemetry/api';
 
 export type Event = {
   name: string,
@@ -12,8 +12,6 @@ export type Event = {
 export interface Ctx {
   traceparent: string,
 };
-
-export type SpanOptions = Record<string, AttributeValue>;
 
 export interface ISpanOptions {
   events: Event[]

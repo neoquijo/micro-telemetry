@@ -1,24 +1,22 @@
-import { SpanContext } from '@opentelemetry/api';
-
 import { Logger } from './logger';
-import { OpenTelemetryLogTransport } from './openTelemetryLogger';
 import { LogTransport } from './logTransport';
+import { SpanContext } from './types';
 
-export class LoggerFactory {
-  public static inst: LoggerFactory;
+export class LoggerFactory<T> {
+  public static inst: LoggerFactory<unknown>;
 
-  private readonly loggerMap: Map<string, Logger> = new Map();
+  private readonly loggerMap: Map<string, Logger<T>> = new Map();
 
-  public static create(transport: LogTransport): LoggerFactory {
+  public static create<T>(transport: LogTransport<T>): LoggerFactory<T> {
     const inst = new LoggerFactory(transport);
     LoggerFactory.inst = inst;
     return inst;
   }
 
-  public constructor(public readonly transport: LogTransport) {
+  public constructor(public readonly transport: LogTransport<T>) {
   }
 
-  public use(name: string, context?: SpanContext): Logger {
+  public use(name: string, context?: SpanContext): Logger<T> {
     if (this.loggerMap.has(name)) {
       return this.loggerMap.get(name)!;
     }
@@ -28,7 +26,7 @@ export class LoggerFactory {
         ? this.transport.spanFromContext(context)!
         : this.transport.span(name);
 
-    const logger = new Logger(this.transport, span);
+    const logger = new Logger<T>(this.transport, span);
     this.loggerMap.set(name, logger);
 
     return logger;

@@ -1,22 +1,21 @@
-import { AttributeValue, Span, SpanContext } from '@opentelemetry/api';
 import Log from 'debug-level';
 import { isUndefined } from 'util';
 
-import { SpanOptions } from './types';
+import { AttributeValue, SpanContext, Attributes } from './types';
 import { LogTransport } from './logTransport';
 
 export type { AttributeValue } from '@opentelemetry/api';
 
 export type ILogger = {
-  span(text: string, father?: SpanContext, data?: SpanOptions): ILogger;
+  span(text: string, father?: SpanContext, data?: Attributes): ILogger;
   end(): void;
-  warn(message: string, data?: SpanOptions): void;
-  silly(message: string, data?: SpanOptions): void;
-  debug(message: string, data?: SpanOptions): void;
-  error(message: string, error?: unknown, data?: SpanOptions): void;
-  info(message: string, data?: SpanOptions): void;
-  verbose(message: string, data?: SpanOptions): void;
-  get id(): any
+  warn(message: string, data?: Attributes): void;
+  silly(message: string, data?: Attributes): void;
+  debug(message: string, data?: Attributes): void;
+  error(message: string, error?: unknown, data?: Attributes): void;
+  info(message: string, data?: Attributes): void;
+  verbose(message: string, data?: Attributes): void;
+  get id(): string | unknown;
 };
 
 export type LogType = 'info' | 'warn' | 'silly' | 'debug' | 'error' | 'verbose';
@@ -25,15 +24,15 @@ type ILogType = {
   [K in LogType]: (message: string) => void;
 };
 
-export class Logger implements ILogger {
+export class Logger<T> implements ILogger {
 
   private _isOpen: boolean = true;
   // eslint-disable-next-line no-use-before-define
-  private readonly childrens: Logger[] = [];
+  private readonly childrens: Logger<T>[] = [];
   private readonly log: ILogType;
   constructor(
-    private readonly transport: LogTransport,
-    private readonly _span: Span
+    private readonly transport: LogTransport<T>,
+    private readonly _span?: T
   ) {
     this.log = {
       error: new Log(`${this.transport.name}:error`, { level: 'ERROR' }).error,
@@ -45,8 +44,8 @@ export class Logger implements ILogger {
     };
   }
 
-  public get id() {
-    return this._span.spanContext()
+  public get id(): string | undefined {
+    return this._span ? this.transport.getSpanId(this._span) : undefined;
   }
 
   public get isOpen(): boolean {
@@ -60,14 +59,15 @@ export class Logger implements ILogger {
 
   public span(text: string, father?: SpanContext): ILogger {
     this.validateIsOpen();
-    const span = new Logger(this.transport, this.transport.childrenSpan(text, this._span, father));
-    this.childrens.push(span);
-    return span;
+    const child = new Logger<T>(this.transport, this.transport.childrenSpan(text, this._span, father));
+    this.childrens.push(child);
+    return child;
   }
 
   public end(): void {
     this.childrens.forEach((children) => children.end());
-    this.transport.endSpan(this._span);
+    if (this._span)
+      this.transport.endSpan(this._span);
     this._isOpen = false;
   }
 
@@ -75,9 +75,9 @@ export class Logger implements ILogger {
     this.validateIsOpen();
     const rawMessage = message.replace(/\w+\[\[([^\]]+)\]\]/g, '$1');
     const span = this.transport.childrenSpan(rawMessage, this._span);
-    span.setAttribute('level', logLevel);
-    span.setAttributes(data);
-    span.end();
+    this.transport.addSpanAttributes(span, { level: logLevel });
+    this.transport.addSpanAttributes(span, data);
+    this.transport.endSpan(span);
     this.log[logLevel](rawMessage);
   }
 

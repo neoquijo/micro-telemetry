@@ -5,7 +5,7 @@ import {
   z,
 } from 'nats-micro';
 
-import { extractLogContextFromHeaders } from '../microserviceUtils';
+import { extractLogContextFromHeaders } from '../../microserviceUtils';
 import { LoggerFactory } from '../../loggerFactory';
 
 const IRequest = z.object({

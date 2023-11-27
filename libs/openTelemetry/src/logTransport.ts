@@ -1,13 +1,15 @@
-import { Span, SpanContext } from '@opentelemetry/api';
+import { AttributeValue, Attributes, ISpanOptions, SpanContext } from './types';
 
-import { ISpanOptions } from './types';
-
-export interface LogTransport {
+export interface LogTransport<T> {
   get name(): string;
 
-  span(name: string): Span;
-  endSpan(span: Span): void;
+  span(name: string): T;
+  endSpan(span: T): void;
 
-  spanFromContext(context: SpanContext): Span | undefined;
-  childrenSpan(name: string, father: Span, fromSpan?: SpanContext, options?: ISpanOptions): Span;
+  spanFromContext(context: SpanContext): T | undefined;
+  childrenSpan(name: string, father: T, fromSpan?: SpanContext, options?: ISpanOptions): T;
+
+  addSpanAttributes(span: T, attributes: Attributes): void;
+
+  getSpanId(span: T): string;
 }
