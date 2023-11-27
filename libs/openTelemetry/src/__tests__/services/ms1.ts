@@ -1,12 +1,14 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
   microservice, method, Request, Response,
-  z,
-  Microservice,
+  z, Microservice,
 } from 'nats-micro';
+
 import { loggerFactory } from '../../loggerFactory';
+import { request } from '../microserviceUtils';
 
 const log = loggerFactory.use('ms1');
+
 @microservice({
   name: 'ms1',
   version: '0.0.1',
@@ -17,31 +19,25 @@ export class MS1 {
   public finished: boolean = false;
 
   // @ts-ignore
-  @method({
-    request: z.string(),
-    response: z.string(),
-  })
+  @method<string, string>()
   async test1(req: Request<string>, res: Response<string>): Promise<void> {
-    const log = mockFactory.use('ms1');
-    log.span('ms1func');
-    const somme = await mockRequest('ms2', 'test1', log.id);
+    log.span('test1');
+
+    await request('ms2', 'test1', 'mockData', log.id);
+    res.send('ms1.test2 result');
+
     log.end();
-    res.send('somme');
   }
 
   // @ts-ignore
-  @method({
-    request: z.string(),
-    response: z.string(),
-  })
+  @method<string, string>()
   async test2(req: Request<string>, res: Response<string>): Promise<void> {
-    const log = mockFactory.use('ms1');
-    mockRequest('ms3', 'test2', log.id);
-    mockRequest('ms2', 'test2', log.id);
+    log.span('test2');
+
+    await request('ms2', 'test2', 'mockData', log.id);
+    await request('ms2', 'test2', 'mockData', log.id);
+    res.send('ms1.test2 result');
 
     log.end();
-    res.send('somme');
-
   }
-
 }
